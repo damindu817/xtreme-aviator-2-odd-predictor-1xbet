@@ -143,33 +143,60 @@
     requestAnimationFrame(updateLiveClock);
   }
 
+  let currentSignal = null;
+
   function updateSignalDisplay() {
     const now = new Date();
     const nowDate = now.toISOString().split("T")[0];
 
+    // If signal is active and still within 60s, keep showing it
+    if (currentSignal) {
+      const start = new Date(`${currentSignal.date}T${currentSignal.time}`);
+      const end = new Date(start.getTime() + 60000);
+      if (now >= start && now <= end) {
+        showSignal(currentSignal);
+        return;
+      } else if (now > end) {
+        showChartComplete();
+        currentSignal = null;
+        return;
+      }
+    }
+
+    // Otherwise, check for a new signal
     const signal = signals.find(sig => {
       const sigDateTime = new Date(`${sig.date}T${sig.time}`);
       return sig.date === nowDate && Math.abs(sigDateTime - now) <= 1000;
     });
 
+    if (signal) {
+      currentSignal = signal;
+      showSignal(signal);
+    }
+  }
+
+  function showSignal(signal) {
     const signalTimeBox = document.getElementById("signalTime");
     const oddBox = document.getElementById("oddValue");
 
-    if (signal) {
-      signalTimeBox.textContent = signal.time;
-      signalTimeBox.style.color = "#9933ff";
-      signalTimeBox.style.borderColor = "#9933ff";
-      signalTimeBox.style.boxShadow = "0 0 15px #9933ff, inset 0 0 20px #9933ff";
-      oddBox.textContent = `ODD - ${parseFloat(signal.odd).toFixed(2)}×`;
-    } else {
-      signalTimeBox.innerHTML = "Loss Chart<br>Activation";
-      signalTimeBox.style.color = "#00bfff";
-      signalTimeBox.style.fontSize = "1.2em";
-      signalTimeBox.style.borderColor = "#00bfff";
-      signalTimeBox.style.boxShadow = "0 0 15px #00bfff, inset 0 0 20px #00bfff";
-      signalTimeBox.style.backgroundColor = "#001f3f";
-      oddBox.textContent = "ODD - --×";
-    }
+    signalTimeBox.textContent = signal.time;
+    signalTimeBox.style.color = "#9933ff";
+    signalTimeBox.style.borderColor = "#9933ff";
+    signalTimeBox.style.boxShadow = "0 0 15px #9933ff, inset 0 0 20px #9933ff";
+    signalTimeBox.style.backgroundColor = "#111";
+    oddBox.textContent = `ODD - ${parseFloat(signal.odd).toFixed(2)}×`;
+  }
+
+  function showChartComplete() {
+    const signalTimeBox = document.getElementById("signalTime");
+    const oddBox = document.getElementById("oddValue");
+
+    signalTimeBox.textContent = "Chart Complete";
+    signalTimeBox.style.color = "#00ff00";
+    signalTimeBox.style.borderColor = "#00ff00";
+    signalTimeBox.style.boxShadow = "0 0 15px #00ff00, inset 0 0 20px #00ff00";
+    signalTimeBox.style.backgroundColor = "#001f00";
+    oddBox.textContent = "ODD - --×";
   }
 
   window.addEventListener("load", async () => {
